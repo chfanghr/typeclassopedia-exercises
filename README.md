@@ -64,7 +64,7 @@ data G a = G (a -> Int)
     fmap f (G g) = ... -- Here g has type a -> Int, while f has type a -> b
 ```
 
-We want to compose a function which has type b -> Int, using f and g ,but there is no resonable way to implement this.
+We want to compose a function which has type `b -> Int`, using `f` and `g `, but there is no *resonable* way to implement this.
 
 5. Is this statement true or false?
 
@@ -119,3 +119,115 @@ fmap (id . id) xs = "aabbcc"
 They should be identical but they're not.
 
 Conclusion: It violates the second law as well
+
+## Applicative
+
+### Laws
+
+1. (Tricky) One might imagine a variant of the interchange law that says something about applying a pure function to an effectful argument. Using the above laws, prove that
+
+   ```
+   pure f <*> x = pure (flip ($)) <*> x <*> pure f
+   ```
+
+```
+flip f b a = f a b
+flip ($) x f = ($) f x = f x
+($ f) = \x -> x f
+
+pure (flip ($)) <*> x <*> pure f
+= (pure (flip ($)) <*> x) <*> pure f
+= (pure (\x' f' -> flip ($) x f') <*> x) <*> pure f
+= (pure (\x' f' -> f' x') <*> x) <*> pure f
+= pure ($ f) <*> (pure (\x' f' -> f' x') <*> x)
+= pure(.) <*> pure ($ f) <*> pure (\x' f' -> f' x') <*> x
+= pure ((\x -> x f) . (\x' f' -> f' x')) <*> x
+= pure f <*> x
+```
+
+### Instances
+
+1. Implement an instance of `Applicative` for `Maybe`.
+
+```haskell
+data Maybe a = Nothing | Just a
+
+instance Functor Maybe where
+  fmap _ Nothing = Nothing
+  fmap f (Just x) = Just $ f x
+
+instance Applicative Maybe where
+  pure x = Just x
+
+  Nothing <*> x = Nothing
+  (Just f) <*> x = fmap f x
+```
+
+2. Determine the correct definition of `pure` for the `ZipList` instance of `Applicative`—there is only one implementation that satisfies the law relating `pure` and `(<*>)`.
+
+```haskell
+newtype ZipList a = ZipList {getZipList :: [a]}
+
+instance Functor ZipList where
+  fmap f (ZipList xs) = ZipList $ map f xs
+
+instance Applicative ZipList where
+  pure f = ZipList $ repeat f
+  (ZipList fs) <*> (ZipList xs) = ZipList $ zipWith ($) fs xs
+```
+
+### Utility functions
+
+1. Implement a function
+
+   ```
+   sequenceAL :: Applicative f => [f a] -> f [a]
+   ```
+
+   There is a generalized version of this, `sequenceA`, which works for any `Traversable` (see the later section on Traversable), but implementing this version specialized to lists is a good exercise.
+
+```haskell
+-- 1. f a -> f [a]
+-- 2. [f[a]] -> f[a]
+
+sequenceAL :: Applicative f => [f a] -> f [a]
+sequenceAL xs = h
+  where
+    g = map ((: []) <$>) xs
+    h = foldl (\l x -> (++) <$> l <*> x) (pure []) g
+```
+
+### Alternative formulation
+
+```haskell
+class Functor f => Monoidal f where
+  unit :: f ()
+  (**) :: f a -> f b -> f (a, b)
+
+class Functor f => Applicative f where
+  pure :: a -> f a
+  (<*>) :: f(a -> b) -> f a -> f b
+```
+
+1. Implement `pure` and `(<*>)` in terms of `unit` and `(**)`, and vice versa.
+
+```haskell
+pure x = x <$ unit
+f <*> x = uncurry ($) <$> (f ** x)
+```
+
+```haskell
+unit = pure ()
+x ** y = (,) <$> x <$> y
+```
+
+2. Are there any `Applicative` instances for which there are also functions `f () -> ()` and `f (a,b) -> (f a, f b)`, satisfying some "reasonable" laws?
+
+`Identity`
+
+TODO: implementation
+
+3. (Tricky) Prove that given your implementations from the first exercise, the usual `Applicative` laws and the `Monoidal` laws stated above are equivalent.
+
+TODO: idk 
+
