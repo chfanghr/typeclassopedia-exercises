@@ -372,3 +372,173 @@ join x =
    in x'''
 ```
 
+## Foldable
+
+### Instances and examples
+
+1. mplement `fold` in terms of `foldMap`.
+
+```Haskell
+fold :: (Monoid m, Foldable t) => t m -> m
+fold = foldMap id
+```
+
+2. What would you need in order to implement `foldMap` in terms of `fold`?
+
+```Haskell
+-- Have to convert t a to t b first
+
+foldMap :: (Foldable t, Functor t, Monoid m) => (a -> m) -> t a -> m
+foldMap f = fold . fmap f
+```
+
+3. Implement `foldMap` in terms of `foldr`.
+
+```Haskell
+foldr :: (Foldable t) => (a -> b -> b) -> b -> t a -> b
+foldr = undefined
+
+foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
+foldMap f = foldr (\x l -> l <> f x) mempty
+```
+
+4. Implement `foldr` in terms of `foldMap` (hint: use the `Endo` monoid).
+
+```Haskell
+newtype Endo a = Endo {appEndo :: a -> a}
+
+instance Semigroup (Endo a) where
+  (Endo x) <> (Endo y) = Endo (x . y)
+
+instance Monoid (Endo a) where
+  mempty = Endo id
+
+foldr :: (Foldable t) => (a -> b -> b) -> b -> t a -> b
+foldr f x t = let g = foldMap (Endo . f) t in appEndo g x
+```
+
+5. What is the type of `foldMap . foldMap`? Or `foldMap . foldMap . foldMap`, etc.? What do they do?
+
+```
+foldMap :: (Monoid, Foldable t) m => (a -> m) -> t a -> m
+
+f :: (Monoid m, Foldable t1, Foldable t2) => (a -> m) -> t1 (t2 a) -> m
+f = foldMap . foldMap
+
+f' :: (Monoid m, Foldable t1, Foldable t2, Foldable t3) => (a -> m) -> t3 (t1 (t2 a)) -> m
+f' = foldMap . foldMap . foldMap
+
+more t*....
+```
+
+### Derived folds
+
+1. Implement `toList :: Foldable f => f a -> [a]` in terms of either `foldr` or `foldMap`.
+
+```Haskell 
+toList' :: Foldable f => f a -> [a]
+toList' = foldMap (: [])
+```
+
+2. Show how one could implement the generic version of `foldr` in terms of `toList`, assuming we had only the list-specific `foldr :: (a -> b -> b) -> b -> [a] -> b`.
+
+```Haskell
+foldr :: (a -> b -> b) -> b -> [a] -> b
+foldr = undefined
+
+foldrg :: (Foldable t) => (a -> b -> b) -> b -> t a -> b
+foldrg f i t = foldr f i $ toList t
+```
+
+3. Pick some of the following functions to implement: `concat`, `concatMap`, `and`, `or`, `any`, `all`, `sum`, `product`, `maximum`(`By`), `minimum`(`By`), `elem`, `notElem`, and `find`. Figure out how they generalize to `Foldable` and come up with elegant implementations using `fold` or `foldMap` along with appropriate `Monoid` instances.
+
+```Haskell
+
+concat1 :: Foldable t => t [a] -> [a]
+concat1 = fold
+
+concatMap1 :: Foldable t => (a -> [b]) -> t a -> [b]
+concatMap1 f = foldMap f
+
+and1 :: Foldable t => t Bool -> Bool
+and1 t = appEndo (foldMap (Endo . (&&)) t) True
+
+or1 :: Foldable t => t Bool -> Bool
+or1 t = appEndo (foldMap (Endo . (||)) t) False
+
+all1 :: Foldable t => (a -> Bool) -> t a -> Bool
+all1 pred = and1 . foldMap (\x -> [pred x])
+
+any1 :: Foldable t => (a -> Bool) -> t a -> Bool
+any1 pred = or1 . foldMap (\x -> [pred x])
+
+newtype Product a = Product {getProduct :: a}
+
+instance (Num a) => Semigroup (Product a) where
+  (Product x) <> (Product y) = Product $ x * y
+
+instance (Num a) => Monoid (Product a) where
+  mempty = Product 1
+
+newtype Sum a = Sum {getSum :: a}
+
+instance (Num a) => Semigroup (Sum a) where
+  (Sum x) <> (Sum y) = Sum $ x + y
+
+instance (Num a) => Monoid (Sum a) where
+  mempty = Sum 0
+
+sum1 :: (Num a, Foldable t) => t a -> a
+sum1 = getSum . foldMap Sum
+
+product1 :: (Num a, Foldable t) => t a -> a
+product1 = getProduct . foldMap Product
+
+data Maximum a = Maximum {getMaximum :: a} | Min -- Get rid of Bounded
+
+instance (Ord a) => Semigroup (Maximum a) where
+  Min <> x = x
+  x <> Min = x
+  (Maximum x) <> (Maximum y) = Maximum $ max x y
+
+instance (Ord a) => Monoid (Maximum a) where
+  mempty = Min
+
+data Minimum a = Minimum {getMinimum :: a} | Max
+
+instance (Ord a) => Semigroup (Minimum a) where
+  Max <> x = x
+  x <> Max = x
+  (Minimum x) <> (Minimum y) = Minimum $ min x y
+
+instance (Ord a) => Monoid (Minimum a) where
+  mempty = Max
+
+minimum1 :: (Foldable t, Ord a) => t a -> a
+minimum1 = getMinimum . foldMap Minimum
+
+maximum1 :: (Foldable t, Ord a) => t a -> a
+maximum1 = getMaximum . foldMap Maximum
+
+elem1 :: (Eq a, Foldable t) => a -> t a -> Bool
+elem1 y = any1 (== y)
+
+notElem1 :: (Eq a, Foldable t) => a -> t a -> Bool
+notElem1 y = all1 (/= y)
+
+data First a = First a | FEmpty
+
+getFirst :: First a -> Maybe a
+getFirst FEmpty = Nothing
+getFirst (First x) = Just x
+
+instance Semigroup (First a) where
+  FEmpty <> x = x
+  x <> _ = x
+
+instance Monoid (First a) where
+  mempty = FEmpty
+
+find1 :: Foldable t => (a -> Bool) -> t a -> Maybe a
+find1 pred = getFirst . foldMap (\x -> if pred x then First x else FEmpty)
+```
