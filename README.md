@@ -218,7 +218,7 @@ f <*> x = uncurry ($) <$> (f ** x)
 
 ```haskell
 unit = pure ()
-x ** y = (,) <$> x <$> y
+x ** y = (,) <$> x <*> y
 ```
 
 2. Are there any `Applicative` instances for which there are also functions `f () -> ()` and `f (a,b) -> (f a, f b)`, satisfying some "reasonable" laws?
@@ -229,5 +229,146 @@ TODO: implementation
 
 3. (Tricky) Prove that given your implementations from the first exercise, the usual `Applicative` laws and the `Monoidal` laws stated above are equivalent.
 
-TODO: idk 
+TODO: working on it
+
+## Monad
+
+### Instances
+
+1. Implement a `Monad` instance for the list constructor, `[]`. Follow the types!
+
+```haskell
+data List a = Empty | Cons a (List a)
+
+concat' :: List a -> List a -> List a
+concat' xs Empty = xs
+concat' Empty xs = xs
+concat' (Cons x xs') xs = Cons x (concat' xs' xs)
+
+instance Functor List where
+  fmap _ Empty = Empty
+  fmap f (Con x xs) = Cons (f x) (fmap f xs)
+
+instance Applicative List where
+  pure x = Cons x Empty
+  Empty <*> _ = Empty
+  (Con f fs) <*> xs = concat' (fmap f xs) (fs <*> xs)
+
+instance Monad List where
+  -- (>>=) :: [a] -> (a -> [b]) -> [b]
+  -- [] >>= _ = []
+  Empty >>= _ = Empty
+  -- (x:xs) >>= f = (f x) ++ (xs >>= f)
+  (Cons x xs) >>= f = concat' (f x) (xs >>= f)
+```
+
+2. Implement a `Monad` instance for `((->) e)`.
+
+```haskell
+instance Applicative (Arrow a) where
+  -- pure :: b -> Arrow a b
+  -- pure :: b -> ((->) a b)
+  pure x = Arrow $ const x
+
+  -- (<*>) :: Arrow a (b -> c) -> Arrow a b -> Arrow a c
+  -- (<*>) :: ((->)a (b -> c)) -> ((->)a b) -> ((->)a c)
+  -- f :: a -> (b -> c)
+  -- g :: a -> b
+  -- r :: a -> c
+  (Arrow f) <*> (Arrow g) = Arrow $ \x -> f x $ g x
+
+instance Monad (Arrow a) where
+  -- (>>=) :: Arrow a b -> (b -> Arrow a c) -> Arrow a c
+  (Arrow g) >>= f = Arrow $
+    \x ->
+      let (Arrow h) = f $ g x
+       in h x
+```
+
+3. Implement `Functor` and `Monad` instances for `Free f`, defined as 
+   
+   ``` haskell
+   data Free f a = Var a
+                 | Node (f (Free f a))
+   ```
+   
+   You may assume that `f` has a `Functor` instance. This is known as the *free monad* built from the functor `f`.
+
+```haskell
+instance (Functor f) => Functor (Free f) where
+  -- fmap :: (a -> b) -> Free f a -> Free f b
+  fmap f (Var a) = Var $ f a
+  fmap f (Node nested) = Node $ fmap (fmap f) nested
+
+instance (Functor f) => Applicative (Free f) where
+  -- pure :: a -> Free f a
+  pure x = Var x
+
+  -- (<*>) :: Free f (a -> b) -> Free f a -> Free f b
+  (Var g) <*> (Var x) = Var $ g x
+  (Var g) <*> (Node x) = Node $ fmap (fmap g) x
+  (Node g) <*> x = Node $ fmap (<*> x) g
+
+instance (Functor f) => Monad (Free f) where
+  -- (>>=) :: Free f a -> (a -> Free f b) -> Free f b
+  (Var x) >>= f = f x
+  (Node x) >>= f = Node $ fmap (>>= f) x
+```
+
+### Intuition
+
+1. Implement `(>>=)` in terms of `fmap` (or `liftM`) and `join`.
+
+```haskell
+fmap :: Functor f => (a -> b) -> f a -> f b
+fmap = undefined
+
+join :: f (f a) -> f a
+join = undefined
+
+(>>=) :: f a -> (a -> f b) -> f b
+x >>= f =
+  -- x :: f a
+  -- f :: (a -> f b)
+  let nested = fmap f x in -- nested :: f (f b)
+    join nested -- remove one layer of context
+```
+
+2. Now implement `join` and `fmap` (`liftM`) in terms of `(>>=)` and `return`.
+
+```haskell
+join :: (Monad m) => m (m a) -> m a
+join x = x >>= id
+
+liftM :: (Monad m) => (a -> b) -> m a -> m b
+liftM f x = x >>= return . f
+```
+
+### Laws
+
+1. Given the definition `g >=> h = \x -> g x >>= h`, prove the equivalence of the above laws and the usual monad laws.
+
+TODO: working on it
+
+## Monad transformers
+
+### Composing monads
+
+1. Implement `join :: M (N (M (N a))) -> M (N a)`, given `distrib :: N (M a) -> M (N a)` and assuming `M` and `N` are instances of `Monad`
+
+```haskell
+distrib :: (Monad m, Monad n) => n (m a) -> m (n a)
+distrib = undefined
+
+join :: (Monad m, Monad n) => m (n (m (n a))) -> m (n a)
+join x =
+  let x''' = -- x''' :: m(n a)
+        x
+          >>= ( \x -> -- x :: n(m(n a))
+                  let x' = distrib x -- x' :: m(n(n a))
+                   in let x'' = join <$> x' -- x'' :: m(n a)
+                       in x''
+              )
+   in x'''
+```
 
