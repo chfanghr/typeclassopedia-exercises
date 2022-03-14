@@ -453,7 +453,6 @@ foldrg f i t = foldr f i $ toList t
 3. Pick some of the following functions to implement: `concat`, `concatMap`, `and`, `or`, `any`, `all`, `sum`, `product`, `maximum`(`By`), `minimum`(`By`), `elem`, `notElem`, and `find`. Figure out how they generalize to `Foldable` and come up with elegant implementations using `fold` or `foldMap` along with appropriate `Monoid` instances.
 
 ```Haskell
-
 concat1 :: Foldable t => t [a] -> [a]
 concat1 = fold
 
@@ -541,4 +540,90 @@ instance Monoid (First a) where
 
 find1 :: Foldable t => (a -> Bool) -> t a -> Maybe a
 find1 pred = getFirst . foldMap (\x -> if pred x then First x else FEmpty)
+```
+
+## Traversable
+
+### Intuition
+
+1. There are at least two natural ways to turn a tree of lists into a list of trees. What are they, and why?
+2. Give a natural way to turn a list of trees into a tree of lists.
+```Haskell
+data BinaryTree a = BNode (BinaryTree a) a (BinaryTree a) | BLeaf deriving (Show)
+
+instance Functor BinaryTree where
+  fmap _ BLeaf = BLeaf
+  fmap f (BNode l x r) = BNode (fmap f l) (f x) (fmap f r)
+
+instance Foldable BinaryTree where
+  -- foldMap :: (Monoid m, Foldable t) => (a -> m) -> Foldable a -> m
+  foldMap _ BLeaf = mempty
+  foldMap f (BNode l x r) = foldMap f l <> f x <> foldMap f r
+
+instance Traversable BinaryTree where
+  -- sequenceA :: (Applicative f) => BinaryTree (f a) -> f (BinaryTree a)
+  sequenceA BLeaf = pure BLeaf
+  sequenceA (BNode l x r) = BNode <$> sequenceA l <*> x <*> sequenceA r
+
+tree :: BinaryTree [Int]
+tree = BNode node [1, 5] node
+  where
+    node = BNode (node' [2]) [3] (node' [4])
+    node' x = BNode BLeaf x BLeaf
+
+{-
+              [2]
+        [3]
+              [4]
+[1, 5]
+              [2]
+        [3]
+              [4]
+-}
+
+--
+
+{-
+[BNode (BNode (BNode BLeaf 2 BLeaf) 3 (BNode BLeaf 4 BLeaf)) 1 (BNode (BNode BLeaf 2 BLeaf) 3 (BNode BLeaf 4 BLeaf)),
+ BNode (BNode (BNode BLeaf 2 BLeaf) 3 (BNode BLeaf 4 BLeaf)) 5 (BNode (BNode BLeaf 2 BLeaf) 3 (BNode BLeaf 4 BLeaf))]
+-}
+treeOfListsToListOfTrees1 :: BinaryTree [a] -> [BinaryTree a]
+treeOfListsToListOfTrees1 = sequenceA
+
+{-
+[BNode BLeaf 2 BLeaf,BNode BLeaf 3 BLeaf,BNode BLeaf 4 BLeaf,
+ BNode BLeaf 1 BLeaf,
+ BNode BLeaf 5 BLeaf,
+ BNode BLeaf 2 BLeaf,BNode BLeaf 3 BLeaf,BNode BLeaf 4 BLeaf]
+-}
+treeOfListsToListOfTrees2 :: BinaryTree [a] -> [BinaryTree a]
+treeOfListsToListOfTrees2 = foldMap (fmap (\x -> BNode BLeaf x BLeaf))
+
+-- 
+
+listOfTreesToTreeOfLists :: [BinaryTree a] -> BinaryTree [a]
+listOfTreesToTreeOfLists ts = BNode BLeaf (mconcat $ map toList ts) BLeaf
+```
+3. What is the type of `traverse . traverse`? What does it do?
+```
+(.) :: (b -> c) -> (a -> b) -> a -> c
+traverse :: Applicative f => (a -> f b) -> t a -> f (t b)
+
+((t a -> f (t b)) -> t (t a) -> f (t (t b))) -> 
+  ((a -> f b) -> t a -> f (t b)) -> 
+  (a -> f b) -> f (t (t b))
+```
+``` Haskell
+f :: (Applicative f, Traversable t1, Traversable t2) => (a -> f b) -> t1 (t2 a) -> f (t1 (t2 b))
+f = traverse . traverse
+```
+Traverse-ing a nested set of two traversable structures.
+
+4. Implement `traverse` in terms of `sequenceA`, and vice versa.
+```Haskell
+traverse1 :: (Applicative f, Traversable t) => (a -> f b) -> t a -> f (t b)
+traverse1 f t = sequenceA $ f <$> t
+
+sequenceA1 :: (Applicative f, Traversable t) => t (f a) -> f (t a)
+sequenceA1 = traverse id
 ```
