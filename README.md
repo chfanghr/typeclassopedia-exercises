@@ -676,3 +676,61 @@ foldMap' :: (Monoid m, Traversable t) => (a -> m) -> t a -> m
 foldMap' f t = getConst $ traverse (MonoidConst . f) t
 ```
 
+2. Implement `Traversable` instances for `[]`, `Maybe`, `((,) e)`, and `Either e`
+
+```haskell
+{-# LANGUAGE TupleSections #-}
+
+-- ......
+
+instance Foldable (Either l) where
+  -- foldMap :: Monoid m => (a -> m) -> Either l a -> m
+  foldMap _ (Left e) = mempty
+  foldMap f (Right x) = f x
+
+instance Traversable (Either l) where
+  -- traverse :: Applicative f => (a -> f b) -> Either l a -> f (Either l b)
+  traverse _ (Left e) = pure $ Left e
+  traverse f (Right x) = Right <$> f x
+
+-- or:
+-- sequenceA :: (Applicative f) => (Either l (f a)) -> (f (Either l a))
+-- sequenceA (Left e) = pure $ Left e
+-- sequenceA (Right x) = Right <$> x
+
+instance Foldable (Tuple a) where
+  -- foldMap :: Monoid m => (b -> m) -> Tuple a b -> m
+  foldMap f (Tuple (_, x)) = f x
+
+instance Traversable (Tuple a) where
+  -- sequenceA :: Applicative f => Tuple a (f b) -> f (Tuple a b)
+  sequenceA (Tuple (y, x)) = Tuple . (y,) <$> x
+
+instance Foldable List where
+  -- foldMap :: Monoid m => (a -> m) -> List a -> m
+  foldMap _ Empty = mempty
+  foldMap f (Con x xs) = f x <> foldMap f xs
+
+instance Traversable List where
+  -- sequenceA :: Applicative f => List (f a) -> f (List a)
+  sequenceA Empty = pure Empty
+  sequenceA (Con x xs) = Con <$> x <*> sequenceA xs
+
+instance Foldable Maybe where
+  foldMap _ Nothing = mempty
+  foldMap f (Just x) = f x
+
+instance Traversable Maybe where
+  -- sequenceA :: Applicative f => Maybe (f a) -> f (Maybe a)
+  sequenceA (Just x) = Just <$> x
+  sequenceA Nothing = pure Nothing
+
+```
+
+3. Explain why `Set` is `Foldable` but not `Traversable`.
+
+TODO: need to see the source code
+
+4. Show that `Traversable` functors compose: that is, implement an instance for `Traversable (Compose f g)` given `Traversable` instances for `f` and `g`.
+
+TODO: working on it
