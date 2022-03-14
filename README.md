@@ -388,7 +388,7 @@ join x =
 
 ### Instances and examples
 
-1. mplement `fold` in terms of `foldMap`.
+1. Implement `fold` in terms of `foldMap`.
 
 ```Haskell
 fold :: (Monoid m, Foldable t) => t m -> m
@@ -639,3 +639,40 @@ traverse f t = sequenceA $ f <$> t
 sequenceA :: (Applicative f, Traversable t) => t (f a) -> f (t a)
 sequenceA = traverse id
 ```
+
+###  Instances and examples
+
+1. implement `fmap` and `foldMap` using only the `Traversable` methods. (Note that the `Traversable` module provides these implementations as `fmapDefault` and `foldMapDefault`.)
+
+```haskell
+newtype Identity a = Identity {getIdentity :: a}
+
+instance Functor Identity where
+  fmap f (Identity x) = Identity $ f x
+
+instance Applicative Identity where
+  pure x = Identity x
+
+  (Identity f) <*> (Identity x) = Identity $ f x
+
+fmap' :: (Traversable t) => (a -> b) -> t a -> t b
+fmap' f t = getIdentity $ traverse (Identity . f) t
+  
+-- My brain hurts
+
+newtype MonoidConst a b = MonoidConst {getConst :: a}
+
+instance Functor (MonoidConst a) where
+  fmap _ (MonoidConst x) = MonoidConst x
+
+instance (Monoid a) => Applicative (MonoidConst a) where 
+  -- pure :: b - > MonoidConst a b 
+  pure x = MonoidConst mempty
+
+  -- (<*>) :: MonoidConst a (b -> c) -> Monoid a b -> Monoid a c
+  (MonoidConst x) <*> (MonoidConst y) = MonoidConst $ x <> y 
+
+foldMap' :: (Monoid m, Traversable t) => (a -> m) -> t a -> m
+foldMap' f t = getConst $ traverse (MonoidConst . f) t
+```
+
