@@ -97,7 +97,19 @@ instance (Functor a, Functor b) => Functor (Compose a b) where
 
 1. Although it is not possible for a `Functor` instance to satisfy the first `Functor` law but not the second (excluding `undefined`), the reverse is possible. Give an example of a (bogus) `Functor` instance which satisfies the second law but not the first.
 
-TODO: idk for now :(
+```haskell
+data     Break a = Yes | No deriving (Eq)
+instance Functor Break where
+         fmap _ _ = No
+```
+```
+first law: 
+fmap id No = No
+fmap id Yes = NO 
+
+second law:
+fmap (id.id) = (fmap id ) . (fmap id)
+```
 
 2. Which laws are violated by the evil `Functor` instance for list shown above: both laws, or the first law alone? Give specific counterexamples.
 
