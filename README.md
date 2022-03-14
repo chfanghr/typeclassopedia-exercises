@@ -617,13 +617,13 @@ traverse :: Applicative f => (a -> f b) -> t a -> f (t b)
 f :: (Applicative f, Traversable t1, Traversable t2) => (a -> f b) -> t1 (t2 a) -> f (t1 (t2 b))
 f = traverse . traverse
 ```
-Traverse-ing a nested set of two traversable structures.
+Traverse a nested set of two traversable structures.
 
 4. Implement `traverse` in terms of `sequenceA`, and vice versa.
 ```Haskell
-traverse1 :: (Applicative f, Traversable t) => (a -> f b) -> t a -> f (t b)
-traverse1 f t = sequenceA $ f <$> t
+traverse :: (Applicative f, Traversable t) => (a -> f b) -> t a -> f (t b)
+traverse f t = sequenceA $ f <$> t
 
-sequenceA1 :: (Applicative f, Traversable t) => t (f a) -> f (t a)
-sequenceA1 = traverse id
+sequenceA :: (Applicative f, Traversable t) => t (f a) -> f (t a)
+sequenceA = traverse id
 ```
