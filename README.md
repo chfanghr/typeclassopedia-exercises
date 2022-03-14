@@ -59,9 +59,9 @@ Consider:
 ```haskell
 data G a = G (a -> Int)
 
-  instance Functor G where
-    fmap :: (a -> b) -> G a -> G b
-    fmap f (G g) = ... -- Here g has type a -> Int, while f has type a -> b
+instance Functor G where
+   fmap :: (a -> b) -> G a -> G b
+   fmap f (G g) = ... -- Here g has type a -> Int, while f has type a -> b
 ```
 
 We want to compose a function which has type `b -> Int`, using `f` and `g `, but there is no *resonable* way to implement this.
