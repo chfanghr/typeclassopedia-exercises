@@ -733,4 +733,16 @@ TODO: need to see the source code
 
 4. Show that `Traversable` functors compose: that is, implement an instance for `Traversable (Compose f g)` given `Traversable` instances for `f` and `g`.
 
-TODO: working on it
+```haskell
+instance (Foldable a, Foldable b) => Foldable (Compose a b) where
+  -- foldMap :: Monoid m => (s -> m) -> Compose a b s -> m
+  foldMap f (Compose ctx) = foldMap (foldMap f) ctx
+
+instance (Traversable a, Traversable b) => Traversable (Compose a b) where
+  -- sequenceA :: Applicative f => Compose a b (f s) -> f (Compose a b s)
+  sequenceA (Compose ctx) = Compose <$> h
+    where 
+      g = fmap sequenceA ctx
+      h = sequenceA g
+```
+
