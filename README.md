@@ -245,7 +245,37 @@ f2 (Identity (x, y)) = (Identity x, Identity y) -- f (a, b) <-> f a ** f b
 
 3. (Tricky) Prove that given your implementations from the first exercise, the usual `Applicative` laws and the `Monoidal` laws stated above are equivalent.
 
-TODO: working on it
+```
+unit ** v = pure () ** v
+					= pure (,) <*> pure () <*> v
+					= pure ((), ) <*> v
+					≅ pure id <*> v
+					= v 
+
+u ** unit = u ** pure ()
+					= pure (,) <*> u <*> pure ()
+					= pure ($ ()) <*> (pure (,) <*> u)
+					= pure (.) <*> pure ($ ()) <*> pure (,) <*> u
+					= pure (($ ()) . (,)) <*> u
+					= pure (\x -> (x , ())) <*> u
+					≅ pure id <*> u 
+					= u
+					
+-- u ** (v ** w) ≅ (u ** v) ** w
+
+(u ** v) ** w = pure (,) <*> (pure (,) <*> u <*> v) <*> w
+							= pure (.) <*> pure(,) <*> pure(,) <*> u <*> v <*> w
+							= pure ((,) . (,)) <*> u <*> v <*> w -- left hand side
+
+u ** (v ** w) = pure (,) <*> u <*> (v ** w)
+							= pure (,) <*> u <*> (pure (,) <*> v <*> w)
+							= pure (.) <*> pure (,) <*> u <*> pure (,) <*> v <*> w
+							= pure ((.) (,)) <*> u <*> pure (,) <*> v <*> w
+							= pure ($ (,)) <*> pure ((.) (,)) <*> u <*> v <*> w
+							= pure ((,) . (,)) <*> u <*> v <*> w -- right hand side
+							
+The left hand side is identical to the right hand side.
+```
 
 ## Monad
 
