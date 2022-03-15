@@ -728,7 +728,8 @@ instance Traversable Maybe where
 3. Explain why `Set` is `Foldable` but not `Traversable`.
 
 `Set` is not a `Functor` instance. 
-(`map` function for `Set` has type `map :: Ord b => (a -> b) -> Set a -> Set b`. So the type parameter b need to be `Ord` as well as a, which make `Set` impossible to be a `Functor`.) 
+
+(`map` function for `Set` has type `map :: Ord b => (a -> b) -> Set a -> Set b`. So the type parameter b need to be `Ord` as well as a, which make  it impossible for `Set` to be a `Functor`.) 
 
 4. Show that `Traversable` functors compose: that is, implement an instance for `Traversable (Compose f g)` given `Traversable` instances for `f` and `g`.
 
