@@ -235,9 +235,7 @@ x ** y = (,) <$> x <*> y
 
 2. Are there any `Applicative` instances for which there are also functions `f () -> ()` and `f (a,b) -> (f a, f b)`, satisfying some "reasonable" laws?
 
-`Identity`
-
-TODO: implementation
+TODO: idk
 
 3. (Tricky) Prove that given your implementations from the first exercise, the usual `Applicative` laws and the `Monoidal` laws stated above are equivalent.
 
@@ -729,7 +727,8 @@ instance Traversable Maybe where
 
 3. Explain why `Set` is `Foldable` but not `Traversable`.
 
-TODO: need to see the source code
+`Set` is not a `Functor` instance. 
+(`map` function for `Set` has type `map :: Ord b => (a -> b) -> Set a -> Set b`. So the type parameter b need to be `Ord` as well as a, which make `Set` impossible to be a Functor.) 
 
 4. Show that `Traversable` functors compose: that is, implement an instance for `Traversable (Compose f g)` given `Traversable` instances for `f` and `g`.
 
