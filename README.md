@@ -24,9 +24,9 @@ instance Functor (Arrow a) where
 
 2. Implement `Functor` instances for `((,) e)` and for `Pair`, defined as
 
-```haskell
-data Pair a = Pair a a
-```
+	```haskell
+	data Pair a = Pair a a
+	```
 
 ```haskell
 newtype Tuple a b = Tuple (a, b)
@@ -235,7 +235,15 @@ x ** y = (,) <$> x <*> y
 
 2. Are there any `Applicative` instances for which there are also functions `f () -> ()` and `f (a,b) -> (f a, f b)`, satisfying some "reasonable" laws?
 
-TODO: idk
+```haskell
+f1 :: Identity () -> ()
+f1 _ = () -- unit <-> () 
+
+f2 :: Identity (a, b) -> (Identity a, Identity b)
+f2 (Identity (x, y)) = (Identity x, Identity y) -- f (a, b) <-> f a ** f b 
+```
+
+
 
 3. (Tricky) Prove that given your implementations from the first exercise, the usual `Applicative` laws and the `Monoidal` laws stated above are equivalent.
 
@@ -659,6 +667,7 @@ fmap' :: (Traversable t) => (a -> b) -> t a -> t b
 fmap' f t = getIdentity $ traverse (Identity . f) t
   
 -- My brain hurts
+-- Spent 1 hr wrting 10 loc
 
 newtype MonoidConst a b = MonoidConst {getConst :: a}
 
