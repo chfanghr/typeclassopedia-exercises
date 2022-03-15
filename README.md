@@ -432,6 +432,8 @@ foldr f x t = let g = foldMap (Endo . f) t in appEndo g x
 ```
 foldMap :: (Monoid, Foldable t) m => (a -> m) -> t a -> m
 
+(I confess that I used ghci cause I am so lazy :)))
+
 f :: (Monoid m, Foldable t1, Foldable t2) => (a -> m) -> t1 (t2 a) -> m
 f = foldMap . foldMap
 
