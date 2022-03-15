@@ -473,23 +473,23 @@ foldrg f i t = foldr f i $ toList t
 3. Pick some of the following functions to implement: `concat`, `concatMap`, `and`, `or`, `any`, `all`, `sum`, `product`, `maximum`(`By`), `minimum`(`By`), `elem`, `notElem`, and `find`. Figure out how they generalize to `Foldable` and come up with elegant implementations using `fold` or `foldMap` along with appropriate `Monoid` instances.
 
 ```Haskell
-concat1 :: Foldable t => t [a] -> [a]
-concat1 = fold
+concat :: Foldable t => t [a] -> [a]
+concat = fold
 
-concatMap1 :: Foldable t => (a -> [b]) -> t a -> [b]
-concatMap1 f = foldMap f
+concatMap :: Foldable t => (a -> [b]) -> t a -> [b]
+concatMap f = foldMap f
 
-and1 :: Foldable t => t Bool -> Bool
-and1 t = appEndo (foldMap (Endo . (&&)) t) True
+and :: Foldable t => t Bool -> Bool
+and t = appEndo (foldMap (Endo . (&&)) t) True
 
-or1 :: Foldable t => t Bool -> Bool
-or1 t = appEndo (foldMap (Endo . (||)) t) False
+or :: Foldable t => t Bool -> Bool
+or t = appEndo (foldMap (Endo . (||)) t) False
 
-all1 :: Foldable t => (a -> Bool) -> t a -> Bool
-all1 pred = and1 . foldMap (\x -> [pred x])
+all :: Foldable t => (a -> Bool) -> t a -> Bool
+all pred = and1 . foldMap (\x -> [pred x])
 
-any1 :: Foldable t => (a -> Bool) -> t a -> Bool
-any1 pred = or1 . foldMap (\x -> [pred x])
+any :: Foldable t => (a -> Bool) -> t a -> Bool
+any pred = or1 . foldMap (\x -> [pred x])
 
 newtype Product a = Product {getProduct :: a}
 
@@ -507,11 +507,11 @@ instance (Num a) => Semigroup (Sum a) where
 instance (Num a) => Monoid (Sum a) where
   mempty = Sum 0
 
-sum1 :: (Num a, Foldable t) => t a -> a
-sum1 = getSum . foldMap Sum
+sum :: (Num a, Foldable t) => t a -> a
+sum = getSum . foldMap Sum
 
-product1 :: (Num a, Foldable t) => t a -> a
-product1 = getProduct . foldMap Product
+product :: (Num a, Foldable t) => t a -> a
+product = getProduct . foldMap Product
 
 data Maximum a = Maximum {getMaximum :: a} | Min -- Get rid of Bounded
 
@@ -533,17 +533,17 @@ instance (Ord a) => Semigroup (Minimum a) where
 instance (Ord a) => Monoid (Minimum a) where
   mempty = Max
 
-minimum1 :: (Foldable t, Ord a) => t a -> a
-minimum1 = getMinimum . foldMap Minimum
+minimum :: (Foldable t, Ord a) => t a -> a
+minimum = getMinimum . foldMap Minimum
 
-maximum1 :: (Foldable t, Ord a) => t a -> a
-maximum1 = getMaximum . foldMap Maximum
+maximum :: (Foldable t, Ord a) => t a -> a
+maximum = getMaximum . foldMap Maximum
 
-elem1 :: (Eq a, Foldable t) => a -> t a -> Bool
-elem1 y = any1 (== y)
+elem :: (Eq a, Foldable t) => a -> t a -> Bool
+elem y = any (== y)
 
-notElem1 :: (Eq a, Foldable t) => a -> t a -> Bool
-notElem1 y = all1 (/= y)
+notElem :: (Eq a, Foldable t) => a -> t a -> Bool
+notElem y = all (/= y)
 
 data First a = First a | FEmpty
 
@@ -558,8 +558,8 @@ instance Semigroup (First a) where
 instance Monoid (First a) where
   mempty = FEmpty
 
-find1 :: Foldable t => (a -> Bool) -> t a -> Maybe a
-find1 pred = getFirst . foldMap (\x -> if pred x then First x else FEmpty)
+find :: Foldable t => (a -> Bool) -> t a -> Maybe a
+find pred = getFirst . foldMap (\x -> if pred x then First x else FEmpty)
 ```
 
 ## Traversable
