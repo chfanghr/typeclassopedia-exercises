@@ -365,9 +365,6 @@ liftM f x = x >>= return . f
 1. Given the definition `g >=> h = \x -> g x >>= h`, prove the equivalence of the above laws and the usual monad laws.
 
 ```
-{-
-g >=> h = \ x -> g x >>= h
-
 return >=> g = \x -> return x >>= g = g = \x -> g x
 So: return x >>= g = g x
 
@@ -381,7 +378,6 @@ So: g >>= return = g
 let m = g x, we have:
 \x -> (m >>= h) >>= k = \x -> m >>= (\y -> h y >>= k)
 So: (m >>= h) >>= k = m >>= (\x -> h x >>= k)
--}
 ```
 
 
