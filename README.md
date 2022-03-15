@@ -243,8 +243,6 @@ f2 :: Identity (a, b) -> (Identity a, Identity b)
 f2 (Identity (x, y)) = (Identity x, Identity y) -- f (a, b) <-> f a ** f b 
 ```
 
-
-
 3. (Tricky) Prove that given your implementations from the first exercise, the usual `Applicative` laws and the `Monoidal` laws stated above are equivalent.
 
 TODO: working on it
@@ -366,7 +364,27 @@ liftM f x = x >>= return . f
 
 1. Given the definition `g >=> h = \x -> g x >>= h`, prove the equivalence of the above laws and the usual monad laws.
 
-TODO: working on it
+```
+{-
+g >=> h = \ x -> g x >>= h
+
+return >=> g = \x -> return x >>= g = g = \x -> g x
+So: return x >>= g = g x
+
+g >=> return = \x -> g x >>= return = g = \x -> g x
+So: g >>= return = g
+
+(g >=> h) >=> k = g >=> (h >=> k)
+\x -> ((g >=> h) x) >>= k = \x -> (g x) >>= (h >=> k)
+\x -> ((\y -> g y >>= h) x) >>= k = \x -> (g x) >>= (\y -> h y >>= k)
+\x -> (g x >>= h) >>= k = \x -> (g x) >>= (\y -> h y >>= k)
+let m = g x, we have:
+\x -> (m >>= h) >>= k = \x -> m >>= (\y -> h y >>= k)
+So: (m >>= h) >>= k = m >>= (\x -> h x >>= k)
+-}
+```
+
+
 
 ## Monad transformers
 
@@ -456,8 +474,8 @@ more t*....
 1. Implement `toList :: Foldable f => f a -> [a]` in terms of either `foldr` or `foldMap`.
 
 ```Haskell 
-toList' :: Foldable f => f a -> [a]
-toList' = foldMap (: [])
+toList :: Foldable f => f a -> [a]
+toList = foldMap (: [])
 ```
 
 2. Show how one could implement the generic version of `foldr` in terms of `toList`, assuming we had only the list-specific `foldr :: (a -> b -> b) -> b -> [a] -> b`.
