@@ -876,11 +876,8 @@ join' x =
 (I finally remembered that I can use a `do` block)
 
 ```haskell
-distrib :: n (m a) -> m (n a)
-distrib = undefined
-
-join' :: (Monad m, Monad n) => m (n (m (n a))) -> m (n a)
-join' x = do
+join'' :: (Monad m, Monad n) => m (n (m (n a))) -> m (n a)
+join'' x = do
   nmna <- x
   nna <- distrib nmna
   let na = join nna
