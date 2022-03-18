@@ -604,6 +604,40 @@ instance Monoid (First a) where
 
 find :: Foldable t => (a -> Bool) -> t a -> Maybe a
 find pred = getFirst . foldMap (\x -> if pred x then First x else FEmpty)
+
+data MaximumBy a = MaximumBy (a -> a -> Ordering) a | Min'
+
+getMaximum' :: MaximumBy a -> a
+getMaximum' (MaximumBy _ x) = x
+getMaximum' _ = error "what the heck man"
+
+instance Semigroup (MaximumBy a) where
+  x <> Min' = x
+  Min' <> x = x
+  (MaximumBy f x) <> (MaximumBy _ y) = MaximumBy f $ if f x y == GT then x else y
+
+instance Monoid (MaximumBy a) where
+  mempty = Min'
+
+data MinimumBy a = MinimumBy (a -> a -> Ordering) a | Max'
+
+getMinimum' :: MinimumBy a -> a
+getMinimum' (MinimumBy _ x) = x
+getMinimum' _ = error "what the heck man"
+
+instance Semigroup (MinimumBy a) where
+  x <> Max' = x
+  Max' <> x = x
+  (MinimumBy f x) <> (MinimumBy _ y) = MinimumBy f $ if f x y == LT then x else y
+
+instance Monoid (MinimumBy a) where
+  mempty = Max'
+
+maximumBy :: Foldable t => (a -> a -> Ordering) -> t a -> a
+maximumBy f = getMaximum' . foldMap (MaximumBy f)
+
+minimumBy :: Foldable t => (a -> a -> Ordering) -> t a -> a
+minimumBy f = getMinimum' . foldMap (MinimumBy f)
 ```
 
 ## Traversable
