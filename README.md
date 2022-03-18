@@ -209,6 +209,10 @@ sequenceAL xs = h
   where
     g = map ((: []) <$>) xs
     h = foldl (\l x -> (++) <$> l <*> x) (pure []) g
+
+sequenceAL' :: Applicative f => [f a] -> f [a]
+sequenceAL' [] = pure []
+sequenceAL' (x:xs) = (:) <$> x <*> sequenceAL1 xs
 ```
 
 ### Alternative formulation
