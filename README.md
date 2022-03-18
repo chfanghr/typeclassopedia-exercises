@@ -497,6 +497,8 @@ f' = foldMap . foldMap . foldMap
 more t*....
 ```
 
+Convert a n-dimensional nested structure to a single value.
+
 ### Derived folds
 
 1. Implement `toList :: Foldable f => f a -> [a]` in terms of either `foldr` or `foldMap`.
