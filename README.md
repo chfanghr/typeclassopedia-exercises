@@ -66,6 +66,8 @@ instance Functor G where
 
 We want to compose a function which has type `b -> Int`, using `f` and `g `, but there is no *resonable* way to implement this.
 
+> Precisely, the exact issue here is that the variable we wish to manipulate is in a negative position, and thus we can't map it forward.
+
 5. Is this statement true or false?
 
 > The composition of two `Functors` is also a` Functor`.
