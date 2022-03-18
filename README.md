@@ -801,3 +801,49 @@ instance (Traversable a, Traversable b) => Traversable (Compose a b) where
       h = sequenceA g
 ```
 
+## Monad transformers
+
+### Definition and laws
+
+1. What is the kind of `t` in the declaration of `MonadTrans`?
+
+```
+(* -> *) -> * -> *
+```
+
+### Composing monads
+
+- Implement `join :: M (N (M (N a))) -> M (N a)`, given `distrib :: N (M a) -> M (N a)` and assuming `M` and `N` are instances of `Monad`.
+
+```haskell
+distrib :: (Monad m, Monad n) => n (m a) -> m (n a)
+distrib = undefined
+
+join' :: m (n (m (n a))) -> m (n a)
+join' x =
+  let x''' = -- x''' :: m(n a)
+        x
+          >>= ( \x -> -- x :: n(m(n a))
+                  let x' = distrib x -- x' :: m(n(n a))
+                   in let x'' = join <$> x' -- x'' :: m(n a)
+                       in x''
+              )
+   in x'''
+```
+
+(I finally remembered that I can use a `do` block)
+
+```haskell
+distrib :: n (m a) -> m (n a)
+distrib = undefined
+
+join' :: (Monad m, Monad n) => m (n (m (n a))) -> m (n a)
+join' x = do
+  nmna <- x
+  nna <- distrib nmna
+  let na = join nna
+  return na
+```
+
+
+
